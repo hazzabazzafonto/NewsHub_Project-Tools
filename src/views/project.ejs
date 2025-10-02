@@ -958,6 +958,10 @@
     <!-- PDF.js Library for Factiva PDF Processing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
+        // Global variables for Factiva PDF Processing
+        let factivaSelectedFile = null;
+        let factivaArticlesData = null;
+
         // Main DOMContentLoaded event listener - consolidates all initialization
         document.addEventListener('DOMContentLoaded', function() {
             // Set up PDF.js worker after DOM is loaded
@@ -2002,14 +2006,12 @@
             }
         }
 
-        // Factiva PDF Processing
-        let factivaSelectedFile = null;
-        let factivaArticlesData = null;
-
         // Initialize Factiva PDF functionality - moved to main DOMContentLoaded
 
         function initializeFactivaPDF() {
             console.log('Initializing Factiva PDF functionality...');
+            console.log('factivaSelectedFile initialized:', factivaSelectedFile);
+            console.log('factivaArticlesData initialized:', factivaArticlesData);
             
             const uploadArea = document.getElementById('factivaUploadArea');
             const fileInput = document.getElementById('factivaFileInput');
@@ -2097,8 +2099,12 @@
         // Handle selected file
         function handleFactivaFile(file) {
             console.log('Handling selected file:', file);
+            console.log('Before assignment - factivaSelectedFile:', factivaSelectedFile);
+            
             factivaSelectedFile = file;
-            console.log('File stored in factivaSelectedFile:', factivaSelectedFile);
+            
+            console.log('After assignment - factivaSelectedFile:', factivaSelectedFile);
+            console.log('File stored successfully:', !!factivaSelectedFile);
             
             showFactivaFileInfo(file);
             
