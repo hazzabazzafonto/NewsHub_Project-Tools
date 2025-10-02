@@ -452,6 +452,150 @@
             display: block;
         }
 
+        /* Factiva PDF Styles */
+        .factiva-upload-area {
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .factiva-upload-area:hover {
+            border-color: #007bff;
+            background-color: #f8f9ff;
+        }
+
+        .factiva-upload-area.dragover {
+            border-color: #007bff;
+            background-color: #f0f4ff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #007bff;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .upload-subtext {
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 15px 0;
+            display: none;
+        }
+
+        .progress-bar.show {
+            display: block;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 15px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .stats {
+            background: #e8f4fd;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        .stats.show {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #0c5460;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-top: 3px;
+        }
+
+        .factiva-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
         .input-panel h4 {
             margin-top: 0;
             margin-bottom: 16px;
@@ -505,6 +649,7 @@
                 <div class="method-tabs">
                     <button type="button" class="method-tab active" data-method="event-registry">Event Registry</button>
                     <button type="button" class="method-tab" data-method="manual">Manual Entry</button>
+                    <button type="button" class="method-tab" data-method="factiva">Factiva PDF</button>
                 </div>
             </div>
 
@@ -666,6 +811,56 @@
                     <button type="submit" class="btn btn-primary">Add Article</button>
                 </form>
             </div>
+
+            <!-- Factiva PDF Panel -->
+            <div id="factivaPanel" class="input-panel">
+                <h4>Factiva PDF Processing</h4>
+                <div class="factiva-upload-area" id="factivaUploadArea">
+                    <div class="upload-icon">📰</div>
+                    <div class="upload-text">Drop your Factiva PDF file here</div>
+                    <div class="upload-subtext">or click to browse</div>
+                    <input type="file" id="factivaFileInput" class="file-input" accept=".pdf">
+                </div>
+
+                <div class="file-info" id="factivaFileInfo">
+                    <div class="file-name" id="factivaFileName"></div>
+                    <div class="file-size" id="factivaFileSize"></div>
+                </div>
+
+                <div class="progress-bar" id="factivaProgressBar">
+                    <div class="progress-fill" id="factivaProgressFill"></div>
+                </div>
+
+                <div class="loading" id="factivaLoading">
+                    <div class="spinner"></div>
+                    <div>Processing PDF... Please wait</div>
+                </div>
+
+                <div class="error" id="factivaError"></div>
+
+                <div class="stats" id="factivaStats">
+                    <h4>Document Statistics</h4>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value" id="factivaPageCount">0</div>
+                            <div class="stat-label">Pages</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="factivaArticleCount">0</div>
+                            <div class="stat-label">Articles</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="factivaWordCount">0</div>
+                            <div class="stat-label">Words</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="factiva-actions">
+                    <button type="button" class="btn btn-primary" id="factivaProcessBtn" disabled>Process PDF</button>
+                    <button type="button" class="btn btn-secondary" id="factivaClearBtn">Clear</button>
+                </div>
+            </div>
         </div>
 
         <!-- Main Content -->
@@ -737,7 +932,12 @@
         </div>
         </div>
 
+    <!-- PDF.js Library for Factiva PDF Processing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
+        // Set up PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
         // Input Method Toggle Functionality
         document.addEventListener('DOMContentLoaded', function() {
             const methodTabs = document.querySelectorAll('.method-tab');
@@ -760,6 +960,8 @@
                         panelId = 'eventRegistryPanel';
                     } else if (method === 'manual') {
                         panelId = 'manualEntryPanel';
+                    } else if (method === 'factiva') {
+                        panelId = 'factivaPanel';
                     }
                     
                     if (panelId) {
@@ -1764,6 +1966,670 @@
                     }
                 }, 5000);
             }
+        }
+
+        // Factiva PDF Processing
+        let factivaSelectedFile = null;
+        let factivaArticlesData = null;
+
+        // Initialize Factiva PDF functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeFactivaPDF();
+        });
+
+        function initializeFactivaPDF() {
+            const uploadArea = document.getElementById('factivaUploadArea');
+            const fileInput = document.getElementById('factivaFileInput');
+            const processBtn = document.getElementById('factivaProcessBtn');
+            const clearBtn = document.getElementById('factivaClearBtn');
+
+            // Event listeners
+            uploadArea.addEventListener('click', () => fileInput.click());
+            uploadArea.addEventListener('dragover', handleFactivaDragOver);
+            uploadArea.addEventListener('dragleave', handleFactivaDragLeave);
+            uploadArea.addEventListener('drop', handleFactivaDrop);
+            fileInput.addEventListener('change', handleFactivaFileSelect);
+            processBtn.addEventListener('click', processFactivaPDF);
+            clearBtn.addEventListener('click', clearFactivaData);
+        }
+
+        // Drag and drop handlers
+        function handleFactivaDragOver(e) {
+            e.preventDefault();
+            document.getElementById('factivaUploadArea').classList.add('dragover');
+        }
+
+        function handleFactivaDragLeave(e) {
+            e.preventDefault();
+            document.getElementById('factivaUploadArea').classList.remove('dragover');
+        }
+
+        function handleFactivaDrop(e) {
+            e.preventDefault();
+            document.getElementById('factivaUploadArea').classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type === 'application/pdf') {
+                handleFactivaFile(files[0]);
+            } else {
+                showFactivaError('Please drop a valid PDF file.');
+            }
+        }
+
+        // File selection handler
+        function handleFactivaFileSelect(e) {
+            const file = e.target.files[0];
+            if (file && file.type === 'application/pdf') {
+                handleFactivaFile(file);
+            } else {
+                showFactivaError('Please select a valid PDF file.');
+            }
+        }
+
+        // Handle selected file
+        function handleFactivaFile(file) {
+            factivaSelectedFile = file;
+            showFactivaFileInfo(file);
+            document.getElementById('factivaProcessBtn').disabled = false;
+            hideFactivaError();
+            hideFactivaStats();
+        }
+
+        // Show file information
+        function showFactivaFileInfo(file) {
+            document.getElementById('factivaFileName').textContent = file.name;
+            document.getElementById('factivaFileSize').textContent = formatFileSize(file.size);
+            document.getElementById('factivaFileInfo').classList.add('show');
+        }
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Process Factiva PDF
+        async function processFactivaPDF() {
+            if (!factivaSelectedFile) return;
+
+            try {
+                showFactivaLoading();
+                hideFactivaError();
+                hideFactivaStats();
+
+                const arrayBuffer = await readFileAsArrayBuffer(factivaSelectedFile);
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                
+                const result = {
+                    metadata: {
+                        filename: factivaSelectedFile.name,
+                        filesize: factivaSelectedFile.size,
+                        pageCount: pdf.numPages,
+                        conversionDate: new Date().toISOString()
+                    },
+                    pages: []
+                };
+
+                let totalWords = 0;
+                let totalChars = 0;
+
+                // Process each page
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    updateFactivaProgress((pageNum / pdf.numPages) * 100);
+                    
+                    const page = await pdf.getPage(pageNum);
+                    const textContent = await page.getTextContent();
+                    
+                    let pageText = '';
+                    let lastY = null;
+                    let lineHeight = 0;
+                    
+                    // Calculate average line height from first few text items
+                    if (textContent.items.length > 0) {
+                        const firstItems = textContent.items.slice(0, Math.min(10, textContent.items.length));
+                        const heights = firstItems.map(item => item.height || 0).filter(h => h > 0);
+                        if (heights.length > 0) {
+                            lineHeight = heights.reduce((a, b) => a + b, 0) / heights.length;
+                        }
+                    }
+                    
+                    textContent.items.forEach((item, index) => {
+                        const currentY = item.transform[5]; // Y position from transform matrix
+                        
+                        // Add line break if Y position changed significantly (indicating new line)
+                        if (lastY !== null && Math.abs(currentY - lastY) > lineHeight * 0.5) {
+                            pageText += '\n';
+                        }
+                        
+                        // Add the text
+                        pageText += item.str;
+                        
+                        // Update last Y position
+                        lastY = currentY;
+                    });
+
+                    const pageData = {
+                        pageNumber: pageNum,
+                        text: pageText.trim(),
+                        wordCount: pageText.trim().split(/\s+/).filter(word => word.length > 0).length,
+                        characterCount: pageText.trim().length
+                    };
+
+                    result.pages.push(pageData);
+                    totalWords += pageData.wordCount;
+                    totalChars += pageData.characterCount;
+                }
+
+                // Extract articles from the index
+                const articles = extractFactivaArticlesFromIndex(result.pages);
+                
+                factivaArticlesData = {
+                    metadata: result.metadata,
+                    articles: articles,
+                    summary: {
+                        totalArticles: articles.length,
+                        totalWords: totalWords,
+                        totalCharacters: totalChars,
+                        articlesWithText: articles.filter(a => a.textContent).length
+                    }
+                };
+
+                // Display results
+                showFactivaStats(articles.length, pdf.numPages, totalWords);
+                hideFactivaLoading();
+                hideFactivaProgress();
+
+                // Write articles to sheet
+                await writeFactivaArticlesToSheet(articles);
+
+            } catch (err) {
+                console.error('Error processing PDF:', err);
+                showFactivaError('Error processing PDF: ' + err.message);
+                hideFactivaLoading();
+                hideFactivaProgress();
+            }
+        }
+
+        // Extract articles from Factiva PDF index pages
+        function extractFactivaArticlesFromIndex(pages) {
+            let articles = [];
+            
+            // Look for index pages (pages with article titles and page numbers)
+            for (let i = 0; i < Math.min(10, pages.length); i++) {
+                const page = pages[i];
+                const text = page.text;
+                
+                // Check if this page contains article listings with page numbers
+                if (isFactivaIndexPage(text)) {
+                    const pageArticles = parseFactivaIndexPage(text, page.pageNumber);
+                    articles.push(...pageArticles);
+                }
+            }
+
+            // If no index pages found, try to identify articles by looking for patterns
+            if (articles.length === 0) {
+                articles.push(...extractFactivaArticlesByPattern(pages));
+            }
+
+            // Extract text content for each article
+            if (articles.length > 0) {
+                articles.forEach((article, index) => {
+                    article.textContent = extractFactivaArticleText(article, pages, articles, index);
+                    
+                    // Extract metadata from the text content
+                    if (article.textContent) {
+                        const metadata = extractFactivaArticleMetadata(article.textContent, article.title);
+                        Object.assign(article, metadata);
+                    }
+                });
+            }
+
+            return articles;
+        }
+
+        // Check if a page is a Factiva index page
+        function isFactivaIndexPage(text) {
+            // Look for multiple patterns that indicate this is an index page
+            const dotPattern = /[A-Z][A-Z\s]+\.{3,}\s+\d+/g;
+            const dotMatches = text.match(dotPattern);
+            
+            const titlePagePattern = /[A-Z][A-Z\s]+\s+\d+/g;
+            const titlePageMatches = text.match(titlePagePattern);
+            
+            const pageNumbers = text.match(/\d+/g);
+            const uniquePageNumbers = [...new Set(pageNumbers)].map(n => parseInt(n)).sort((a, b) => a - b);
+            
+            const hasMultipleArticles = (dotMatches && dotMatches.length >= 2) || 
+                                     (titlePageMatches && titlePageMatches.length >= 2);
+            
+            const hasReasonablePageNumbers = uniquePageNumbers.length >= 2 && 
+                                           uniquePageNumbers.every((num, i) => i === 0 || num > uniquePageNumbers[i-1]);
+            
+            return hasMultipleArticles || hasReasonablePageNumbers;
+        }
+
+        // Parse Factiva index page to extract articles
+        function parseFactivaIndexPage(text, pageNumber) {
+            const articles = [];
+            
+            // Filter out header text
+            let cleanText = text;
+            cleanText = cleanText.replace(/Page \d+ of \d+\s*© \d+ Factiva, Inc\. All rights reserved\./g, '');
+            cleanText = cleanText.replace(/Page \d+ of \d+/g, '');
+            cleanText = cleanText.replace(/© \d+ Factiva, Inc\. All rights reserved\./g, '');
+            
+            // Find all page numbers in the text
+            const pageNumbers = [];
+            
+            // Primary pattern: Look for numbers that are preceded by dots
+            const dotPagePattern = /\.{2,}\s*(\d+)/g;
+            let dotMatch;
+            
+            while ((dotMatch = dotPagePattern.exec(cleanText)) !== null) {
+                const pageNum = parseInt(dotMatch[1]);
+                if (pageNum > 1 && pageNum < 500) {
+                    pageNumbers.push({
+                        number: pageNum,
+                        index: dotMatch.index + dotMatch[0].length - pageNum.toString().length
+                    });
+                }
+            }
+            
+            // Sort page numbers by their position in the text
+            pageNumbers.sort((a, b) => a.index - b.index);
+            
+            // Extract text before each page number as potential article titles
+            for (let i = 0; i < pageNumbers.length; i++) {
+                const currentPage = pageNumbers[i];
+                
+                let startIndex = 0;
+                if (i > 0) {
+                    const previousPage = pageNumbers[i - 1];
+                    startIndex = previousPage.index + previousPage.number.toString().length;
+                }
+                
+                const endIndex = currentPage.index;
+                
+                if (endIndex > startIndex) {
+                    const textSegment = cleanText.substring(startIndex, endIndex).trim();
+                    
+                    let cleanTitle = textSegment
+                        .replace(/\.{3,}/g, ' ')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+                    
+                    if (cleanTitle.length >= 5 && isValidFactivaArticleTitle(cleanTitle, currentPage.number)) {
+                        articles.push({
+                            title: cleanTitle,
+                            pageNumber: currentPage.number,
+                            indexPage: pageNumber
+                        });
+                    }
+                }
+            }
+            
+            return articles;
+        }
+
+        // Validate article title
+        function isValidFactivaArticleTitle(title, pageNum) {
+            if (!title || !pageNum) return false;
+            if (title.length < 3) return false;
+            if (pageNum < 1 || pageNum > 1000) return false;
+            
+            const invalidPatterns = ['Page', 'Factiva', 'Inc', 'All rights reserved', '©', 'Document', 'Unknown', 'Dow Jones'];
+            for (const pattern of invalidPatterns) {
+                if (title.includes(pattern)) return false;
+            }
+            
+            const letterCount = (title.match(/[A-Za-z]/g) || []).length;
+            if (letterCount === 0) return false;
+            if (letterCount / title.length < 0.1) return false;
+            
+            return true;
+        }
+
+        // Extract text content for a specific article
+        function extractFactivaArticleText(article, pages, allArticles, currentIndex) {
+            const startPage = article.pageNumber;
+            let endPage = startPage;
+            
+            // Find the next article's page number to determine where this article ends
+            const nextArticle = allArticles.find((a, index) => index > currentIndex && a.pageNumber > startPage);
+            if (nextArticle) {
+                endPage = nextArticle.pageNumber - 1;
+            } else {
+                endPage = pages.length;
+            }
+            
+            let articleText = '';
+            
+            // Extract text from each page in the range
+            for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
+                const page = pages.find(p => p.pageNumber === pageNum);
+                if (page) {
+                    if (pageNum > startPage) {
+                        articleText += '\n\n--- Page ' + pageNum + ' ---\n\n';
+                    }
+                    articleText += page.text;
+                }
+            }
+            
+            return articleText.trim();
+        }
+
+        // Extract article metadata
+        function extractFactivaArticleMetadata(articleText, articleTitle) {
+            const metadata = {
+                wordCount: null,
+                publishDate: null,
+                author: null,
+                source: null
+            };
+            
+            if (!articleText || articleText.length === 0) {
+                return metadata;
+            }
+            
+            const lines = articleText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            
+            // Look for word count and date pattern in the first few lines
+            for (let i = 0; i < Math.min(20, lines.length); i++) {
+                const line = lines[i];
+                
+                const wordCountPattern = /^(\d{1,3}(?:,\d{3})*)\s+words$/i;
+                const wordCountMatch = line.match(wordCountPattern);
+                
+                if (wordCountMatch) {
+                    const wordCountStr = wordCountMatch[1].replace(/,/g, '');
+                    metadata.wordCount = parseInt(wordCountStr);
+                    
+                    if (i + 1 < lines.length) {
+                        const nextLine = lines[i + 1].trim();
+                        metadata.publishDate = parseFactivaDate(nextLine);
+                        
+                        if (i + 2 < lines.length) {
+                            const lineAfterDate = lines[i + 2].trim();
+                            
+                            const timePattern = /^\d{1,2}:\d{2}\s*(AM|PM|am|pm)?$/;
+                            const isTimeLine = timePattern.test(lineAfterDate);
+                            
+                            if (isTimeLine) {
+                                if (i + 3 < lines.length) {
+                                    const sourceLine = lines[i + 3].trim();
+                                    if (sourceLine.length > 0 && isValidFactivaSourceName(sourceLine)) {
+                                        metadata.source = sourceLine;
+                                    }
+                                }
+                            } else {
+                                if (lineAfterDate.length > 0 && isValidFactivaSourceName(lineAfterDate)) {
+                                    metadata.source = lineAfterDate;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Look for author above word count line
+                    if (i > 0) {
+                        const lineAboveWordCount = lines[i - 1].trim();
+                        if (lineAboveWordCount.length > 0 && !isCommonFactivaNonAuthorText(lineAboveWordCount)) {
+                            metadata.author = lineAboveWordCount;
+                        }
+                    }
+                    
+                    break;
+                }
+            }
+            
+            return metadata;
+        }
+
+        // Parse date from various formats
+        function parseFactivaDate(dateText) {
+            const datePatterns = [
+                /^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/,
+                /^([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})$/,
+                /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
+                /^(\d{4})-(\d{1,2})-(\d{1,2})$/
+            ];
+            
+            for (const pattern of datePatterns) {
+                const match = dateText.match(pattern);
+                if (match) {
+                    try {
+                        if (pattern.source.includes('[A-Za-z]+')) {
+                            const day = parseInt(match[1]);
+                            const month = match[2];
+                            const year = parseInt(match[3]);
+                            
+                            const monthNames = [
+                                'january', 'february', 'march', 'april', 'may', 'june',
+                                'july', 'august', 'september', 'october', 'november', 'december'
+                            ];
+                            const monthIndex = monthNames.indexOf(month.toLowerCase());
+                            
+                            if (monthIndex !== -1) {
+                                const date = new Date(year, monthIndex, day);
+                                if (!isNaN(date.getTime())) {
+                                    return date.toISOString().split('T')[0];
+                                }
+                            }
+                        } else {
+                            const parts = match.slice(1).map(Number);
+                            let date;
+                            
+                            if (pattern.source.includes('\\d{4}-')) {
+                                date = new Date(parts[0], parts[1] - 1, parts[2]);
+                            } else {
+                                date = new Date(parts[2], parts[0] - 1, parts[1]);
+                            }
+                            
+                            if (!isNaN(date.getTime())) {
+                                return date.toISOString().split('T')[0];
+                            }
+                        }
+                    } catch (error) {
+                        console.warn('Error parsing date:', dateText, error);
+                    }
+                }
+            }
+            
+            return dateText;
+        }
+
+        // Check if text is likely not an author name
+        function isCommonFactivaNonAuthorText(text) {
+            const nonAuthorPatterns = [
+                /^page\s+\d+/i,
+                /^©\s*\d{4}/i,
+                /^factiva/i,
+                /^all\s+rights\s+reserved/i,
+                /^\d+$/,
+                /^\s*$/,
+                /^volume\s+\d+/i,
+                /^issue\s+\d+/i,
+                /^document\s+\d+/i
+            ];
+            
+            return nonAuthorPatterns.some(pattern => pattern.test(text));
+        }
+
+        // Check if text is likely a valid source name
+        function isValidFactivaSourceName(text) {
+            if (!text || text.length < 3) return false;
+            
+            const letterCount = (text.match(/[A-Za-z]/g) || []).length;
+            if (letterCount < 2) return false;
+            
+            if (/^\d{1,2}:\d{2}\s*(AM|PM|am|pm)?$/i.test(text)) return false;
+            if (/^\d+$/.test(text)) return false;
+            
+            return true;
+        }
+
+        // Extract articles by pattern if no index is found
+        function extractFactivaArticlesByPattern(pages) {
+            const articles = [];
+            
+            for (const page of pages) {
+                const text = page.text;
+                
+                // Look for article headers (titles in all caps, followed by author info)
+                const articleMatches = text.match(/[A-Z][A-Z\s]+(?:\s+[A-Z][a-z]+\s+\d+,\d+\s+words)/g);
+                
+                if (articleMatches) {
+                    for (const match of articleMatches) {
+                        const title = match.split(/\s+\d+,\d+\s+words/)[0].trim();
+                        if (title.length > 10) {
+                            articles.push({
+                                title: title,
+                                pageNumber: page.pageNumber,
+                                indexPage: null
+                            });
+                        }
+                    }
+                }
+            }
+            
+            return articles;
+        }
+
+        // Write Factiva articles to sheet
+        async function writeFactivaArticlesToSheet(articles) {
+            if (!articles || articles.length === 0) {
+                showFactivaError('No articles to write to sheet.');
+                return;
+            }
+
+            try {
+                // Format articles for the API
+                const formattedArticles = articles.map(article => ({
+                    source: article.source || 'Factiva',
+                    title: article.title || 'No Title',
+                    authors: article.author || 'No Author Available',
+                    url: '', // Factiva articles don't have URLs
+                    content: article.textContent || 'No Content Available',
+                    date: article.publishDate || new Date().toISOString().split('T')[0],
+                    inputMethod: 'Factiva PDF'
+                }));
+
+                const res = await fetch('/api/event-registry/write-to-sheet', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        projectId: '<%= project.id %>',
+                        articles: formattedArticles
+                    })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    showFactivaSuccess(`Successfully processed and added ${articles.length} articles from Factiva PDF!`);
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    const errorData = await res.json();
+                    showFactivaError(`Failed to write articles to sheet: ${errorData.message || 'Unknown error'}`);
+                }
+            } catch (error) {
+                showFactivaError(`Failed to write articles to sheet: ${error.message}`);
+            }
+        }
+
+        // Utility functions
+        function readFileAsArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        function updateFactivaProgress(percentage) {
+            document.getElementById('factivaProgressFill').style.width = percentage + '%';
+        }
+
+        function showFactivaLoading() {
+            document.getElementById('factivaLoading').classList.add('show');
+            document.getElementById('factivaProcessBtn').disabled = true;
+        }
+
+        function hideFactivaLoading() {
+            document.getElementById('factivaLoading').classList.remove('show');
+            document.getElementById('factivaProcessBtn').disabled = false;
+        }
+
+        function showFactivaProgress() {
+            document.getElementById('factivaProgressBar').classList.add('show');
+        }
+
+        function hideFactivaProgress() {
+            document.getElementById('factivaProgressBar').classList.remove('show');
+            document.getElementById('factivaProgressFill').style.width = '0%';
+        }
+
+        function showFactivaError(message) {
+            const errorEl = document.getElementById('factivaError');
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+        }
+
+        function hideFactivaError() {
+            document.getElementById('factivaError').classList.remove('show');
+        }
+
+        function showFactivaStats(articleCount, pageCount, totalWords) {
+            document.getElementById('factivaPageCount').textContent = pageCount;
+            document.getElementById('factivaArticleCount').textContent = articleCount;
+            document.getElementById('factivaWordCount').textContent = totalWords.toLocaleString();
+            document.getElementById('factivaStats').classList.add('show');
+        }
+
+        function hideFactivaStats() {
+            document.getElementById('factivaStats').classList.remove('show');
+        }
+
+        function showFactivaSuccess(message) {
+            // Create a temporary success message
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.style.cssText = `
+                background: #d4edda;
+                color: #155724;
+                border: 1px solid #c3e6cb;
+                border-radius: 8px;
+                padding: 12px;
+                margin: 15px 0;
+                font-weight: 500;
+            `;
+            successDiv.textContent = message;
+            
+            const factivaPanel = document.getElementById('factivaPanel');
+            factivaPanel.insertBefore(successDiv, factivaPanel.firstChild);
+            
+            // Remove after 5 seconds
+            setTimeout(() => {
+                if (successDiv.parentNode) {
+                    successDiv.parentNode.removeChild(successDiv);
+                }
+            }, 5000);
+        }
+
+        function clearFactivaData() {
+            factivaSelectedFile = null;
+            factivaArticlesData = null;
+            document.getElementById('factivaFileInput').value = '';
+            document.getElementById('factivaFileInfo').classList.remove('show');
+            document.getElementById('factivaStats').classList.remove('show');
+            document.getElementById('factivaProcessBtn').disabled = true;
+            hideFactivaError();
+            hideFactivaLoading();
+            hideFactivaProgress();
         }
     </script>
 </body>

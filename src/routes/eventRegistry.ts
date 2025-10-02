@@ -221,8 +221,9 @@ router.post('/write-to-sheet', async (req: express.Request, res: express.Respons
       timeout: 60000 // 60 second timeout for the entire client
     });
 
-    // Determine if these are Event Registry articles or manual entries
+    // Determine article type based on structure
     const isEventRegistryArticles = articles.length > 0 && articles[0].source?.title !== undefined;
+    const isFactivaArticles = articles.length > 0 && articles[0].inputMethod === 'Factiva PDF';
     
     let formattedArticles: string[][];
     
@@ -232,6 +233,9 @@ router.post('/write-to-sheet', async (req: express.Request, res: express.Respons
     if (isEventRegistryArticles) {
       // Event Registry articles
       formattedArticles = eventRegistryAPI.formatArticlesForSheets(articles, nextId);
+    } else if (isFactivaArticles) {
+      // Factiva PDF articles
+      formattedArticles = eventRegistryAPI.formatFactivaArticlesForSheets(articles, nextId);
     } else {
       // Manual entry articles
       formattedArticles = eventRegistryAPI.formatManualArticlesForSheets(articles, nextId);

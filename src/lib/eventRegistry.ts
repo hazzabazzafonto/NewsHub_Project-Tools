@@ -243,6 +243,24 @@ export class EventRegistryAPI {
   }
 
   /**
+   * Format Factiva PDF articles for Google Sheets
+   */
+  formatFactivaArticlesForSheets(articles: any[], startId: number = 1): string[][] {
+    return articles.map((article, index) => {
+      return [
+        (startId + index).toString(), // Sequential ID
+        article.source || 'Factiva',
+        article.title || 'No Title',
+        article.authors || 'No Author Available',
+        article.url || '', // Factiva articles don't have URLs
+        article.content || 'No Content Available',
+        article.date || new Date().toISOString().split('T')[0],
+        article.inputMethod || 'Factiva PDF'
+      ];
+    });
+  }
+
+  /**
    * Parse boolean query string into Event Registry format
    * Supports complex queries with nested AND/OR operations and parentheses
    */
