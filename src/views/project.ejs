@@ -938,8 +938,9 @@
         // Set up PDF.js worker
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-        // Input Method Toggle Functionality
+        // Main DOMContentLoaded event listener - consolidates all initialization
         document.addEventListener('DOMContentLoaded', function() {
+            // Input Method Toggle Functionality
             const methodTabs = document.querySelectorAll('.method-tab');
             const inputPanels = document.querySelectorAll('.input-panel');
 
@@ -969,6 +970,19 @@
                     }
                 });
             });
+
+            // Initialize Factiva PDF functionality
+            initializeFactivaPDF();
+
+            // Set default dates (today and 30 days ago)
+            const today = new Date();
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+            
+            const startDateEl = document.getElementById('startDate');
+            const endDateEl = document.getElementById('endDate');
+            if (startDateEl) startDateEl.value = thirtyDaysAgo.toISOString().split('T')[0];
+            if (endDateEl) endDateEl.value = today.toISOString().split('T')[0];
         });
 
         // Event Registry functionality
@@ -1574,15 +1588,7 @@
             }
         }
 
-        // Set default dates (today and 30 days ago)
-        document.addEventListener('DOMContentLoaded', function() {
-            const today = new Date();
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(today.getDate() - 30);
-            
-            document.getElementById('startDate').value = thirtyDaysAgo.toISOString().split('T')[0];
-            document.getElementById('endDate').value = today.toISOString().split('T')[0];
-        });
+        // Set default dates (today and 30 days ago) - moved to main DOMContentLoaded
 
         // Article selection handling
         const checkboxes = document.querySelectorAll('.article-checkbox');
@@ -1972,25 +1978,42 @@
         let factivaSelectedFile = null;
         let factivaArticlesData = null;
 
-        // Initialize Factiva PDF functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeFactivaPDF();
-        });
+        // Initialize Factiva PDF functionality - moved to main DOMContentLoaded
 
         function initializeFactivaPDF() {
+            console.log('Initializing Factiva PDF functionality...');
+            
             const uploadArea = document.getElementById('factivaUploadArea');
             const fileInput = document.getElementById('factivaFileInput');
             const processBtn = document.getElementById('factivaProcessBtn');
             const clearBtn = document.getElementById('factivaClearBtn');
 
+            console.log('Elements found:', {
+                uploadArea: !!uploadArea,
+                fileInput: !!fileInput,
+                processBtn: !!processBtn,
+                clearBtn: !!clearBtn
+            });
+
+            if (!uploadArea || !fileInput) {
+                console.error('Required Factiva PDF elements not found!');
+                return;
+            }
+
             // Event listeners
-            uploadArea.addEventListener('click', () => fileInput.click());
+            uploadArea.addEventListener('click', () => {
+                console.log('Upload area clicked');
+                fileInput.click();
+            });
             uploadArea.addEventListener('dragover', handleFactivaDragOver);
             uploadArea.addEventListener('dragleave', handleFactivaDragLeave);
             uploadArea.addEventListener('drop', handleFactivaDrop);
             fileInput.addEventListener('change', handleFactivaFileSelect);
-            processBtn.addEventListener('click', processFactivaPDF);
-            clearBtn.addEventListener('click', clearFactivaData);
+            
+            if (processBtn) processBtn.addEventListener('click', processFactivaPDF);
+            if (clearBtn) clearBtn.addEventListener('click', clearFactivaData);
+            
+            console.log('Factiva PDF event listeners attached successfully');
         }
 
         // Drag and drop handlers
@@ -2018,10 +2041,15 @@
 
         // File selection handler
         function handleFactivaFileSelect(e) {
+            console.log('File input changed');
             const file = e.target.files[0];
+            console.log('Selected file:', file);
+            
             if (file && file.type === 'application/pdf') {
+                console.log('Valid PDF file selected');
                 handleFactivaFile(file);
             } else {
+                console.log('Invalid file type:', file?.type);
                 showFactivaError('Please select a valid PDF file.');
             }
         }
