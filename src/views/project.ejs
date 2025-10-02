@@ -735,7 +735,7 @@
             <% } %>
         </section>
         </div>
-    </div>
+        </div>
 
     <script>
         // Input Method Toggle Functionality
@@ -753,7 +753,18 @@
                     
                     // Add active class to clicked tab and corresponding panel
                     this.classList.add('active');
-                    document.getElementById(method + 'Panel').classList.add('active');
+                    
+                    // Map method names to panel IDs
+                    let panelId;
+                    if (method === 'event-registry') {
+                        panelId = 'eventRegistryPanel';
+                    } else if (method === 'manual') {
+                        panelId = 'manualEntryPanel';
+                    }
+                    
+                    if (panelId) {
+                        document.getElementById(panelId).classList.add('active');
+                    }
                 });
             });
         });
@@ -788,10 +799,10 @@
                     <span class="item-type">TERM</span>
                     <div class="operator-toggle">
                         <button type="button" class="operator-btn active-and" data-operator="AND" onclick="toggleOperator('${termId}')">AND</button>
-                </div>
+                    </div>
                     <input type="text" class="term-input" placeholder="Enter search term" onchange="updateQueryVisualization()" onkeyup="updateQueryVisualization()">
                     <button type="button" class="remove-btn" onclick="removeQueryItem('${termId}')">Remove</button>
-                </div>
+                    </div>
             `;
             
             container.insertAdjacentHTML('beforeend', termHtml);
@@ -814,11 +825,11 @@
                         <div class="group-controls">
                             <button type="button" onclick="addBooleanTermToGroup('${groupId}')">+ Add Term</button>
                             <button type="button" onclick="addBooleanGroupToGroup('${groupId}')">+ Add Group</button>
-                    </div>
+                </div>
                         <div class="group-items" id="group_${groupId}_items">
                             <!-- Group items will be added here -->
                     </div>
-                </div>
+                    </div>
                 </div>
             `;
             
