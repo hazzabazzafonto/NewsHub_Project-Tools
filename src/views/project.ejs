@@ -409,14 +409,108 @@
         .query-item .group-controls button:hover {
             background-color: #e9ecef;
         }
+
+        /* Input Method Toggle Styles */
+        .input-method-toggle {
+            margin-bottom: 20px;
+        }
+
+        .method-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 16px;
+        }
+
+        .method-tab {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #dee2e6;
+            background-color: #f8f9fa;
+            color: #495057;
+            cursor: pointer;
+            border-radius: 4px 4px 0 0;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .method-tab:hover {
+            background-color: #e9ecef;
+        }
+
+        .method-tab.active {
+            background-color: #0070f3;
+            color: white;
+            border-color: #0070f3;
+        }
+
+        .input-panel {
+            display: none;
+        }
+
+        .input-panel.active {
+            display: block;
+        }
+
+        .input-panel h4 {
+            margin-top: 0;
+            margin-bottom: 16px;
+            color: #333;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .input-panel .form-group {
+            margin-bottom: 16px;
+        }
+
+        .input-panel label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 500;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .input-panel input,
+        .input-panel textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        .input-panel input:focus,
+        .input-panel textarea:focus {
+            outline: 0;
+            border-color: #0070f3;
+            box-shadow: 0 0 0 0.2rem rgba(0, 112, 243, 0.25);
+        }
+
+        .input-panel input[readonly] {
+            background-color: #f8f9fa;
+            color: #6c757d;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <!-- Sidebar -->
         <div class="sidebar">
-            <h3>Event Registry</h3>
-            <div class="event-registry-panel">
+            <!-- Input Method Toggle -->
+            <div class="input-method-toggle">
+                <h3>Add Articles</h3>
+                <div class="method-tabs">
+                    <button type="button" class="method-tab active" data-method="event-registry">Event Registry</button>
+                    <button type="button" class="method-tab" data-method="manual">Manual Entry</button>
+                </div>
+            </div>
+
+            <!-- Event Registry Panel -->
+            <div id="eventRegistryPanel" class="input-panel active">
+                <h4>Event Registry</h4>
                 <!-- Search Mode Toggle -->
                 <div class="search-mode-toggle">
                     <label>
@@ -536,6 +630,42 @@
                 <!-- Results -->
                 <div id="eventRegistryResults"></div>
             </div>
+
+            <!-- Manual Entry Panel -->
+            <div id="manualEntryPanel" class="input-panel">
+                <h4>Manual Entry</h4>
+                <form id="addArticleForm">
+                    <div class="form-group">
+                        <label for="articleSource">Source *</label>
+                        <input type="text" id="articleSource" placeholder="e.g., BBC News, Reuters" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="articleTitle">Title *</label>
+                        <input type="text" id="articleTitle" placeholder="Article Title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="articleAuthor">Author</label>
+                        <input type="text" id="articleAuthor" placeholder="Author name (optional)">
+                    </div>
+                    <div class="form-group">
+                        <label for="articleUrl">URL</label>
+                        <input type="url" id="articleUrl" placeholder="https://example.com/article">
+                    </div>
+                    <div class="form-group">
+                        <label for="articleContent">Content</label>
+                        <textarea id="articleContent" placeholder="Article content or summary (optional)" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="articleDate">Date</label>
+                        <input type="date" id="articleDate" value="<%= new Date().toISOString().split('T')[0] %>">
+                    </div>
+                    <div class="form-group">
+                        <label for="articleInputMethod">Input Method</label>
+                        <input type="text" id="articleInputMethod" value="Manual" readonly>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Article</button>
+                </form>
+            </div>
         </div>
 
         <!-- Main Content -->
@@ -601,29 +731,33 @@
                     </button>
                 </div>
             <% } else { %>
-                <p>No articles yet. Add some articles below to get started!</p>
+                <p>No articles yet. Use the sidebar to add articles via Event Registry or Manual Entry!</p>
             <% } %>
         </section>
-
-            <div class="form-section">
-                <h3>Add Article (Manual)</h3>
-                <form id="addArticleForm">
-                    <div class="form-group">
-                        <input type="text" id="articleTitle" placeholder="Article Title *" required>
-                    </div>
-                    <div class="form-group">
-                        <input type="url" id="articleUrl" placeholder="URL (optional)">
-                    </div>
-                    <div class="form-group">
-                        <textarea id="articleContent" placeholder="Content (optional)"></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Add Article</button>
-                </form>
-            </div>
-            </div>
         </div>
+    </div>
 
     <script>
+        // Input Method Toggle Functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const methodTabs = document.querySelectorAll('.method-tab');
+            const inputPanels = document.querySelectorAll('.input-panel');
+
+            methodTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const method = this.getAttribute('data-method');
+                    
+                    // Remove active class from all tabs and panels
+                    methodTabs.forEach(t => t.classList.remove('active'));
+                    inputPanels.forEach(p => p.classList.remove('active'));
+                    
+                    // Add active class to clicked tab and corresponding panel
+                    this.classList.add('active');
+                    document.getElementById(method + 'Panel').classList.add('active');
+                });
+            });
+        });
+
         // Event Registry functionality
         let eventRegistrySources = [];
         let fetchedArticles = [];
@@ -1284,30 +1418,62 @@
             }
         });
 
-        // Add article form
+        // Add article form (Manual Entry)
         document.getElementById('addArticleForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            const source = document.getElementById('articleSource').value;
             const title = document.getElementById('articleTitle').value;
+            const author = document.getElementById('articleAuthor').value;
             const url = document.getElementById('articleUrl').value;
             const content = document.getElementById('articleContent').value;
+            const date = document.getElementById('articleDate').value;
+            const inputMethod = document.getElementById('articleInputMethod').value;
 
-            if (!title) return;
+            if (!source || !title) {
+                alert('Source and Title are required fields');
+                return;
+            }
+
+            // Create article object matching Google Sheets format
+            const article = {
+                id: Date.now().toString(), // Simple ID generation
+                source: source,
+                title: title,
+                authors: author || 'No Author',
+                url: url || '',
+                content: content || 'No Content',
+                date: date || new Date().toISOString().split('T')[0],
+                inputMethod: inputMethod
+            };
 
             try {
-                const res = await fetch(`/api/projects/<%= project.id %>/articles/add`, {
+                const res = await fetch('/api/event-registry/write-to-sheet', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, url, content })
+                    body: JSON.stringify({
+                        projectId: '<%= project.id %>',
+                        articles: [article]
+                    })
                 });
 
                 if (res.ok) {
-                    location.reload(); // Refresh to show new article
+                    const data = await res.json();
+                    alert(`Successfully added article: ${title}`);
+                    // Clear the form
+                    document.getElementById('addArticleForm').reset();
+                    document.getElementById('articleDate').value = new Date().toISOString().split('T')[0];
+                    document.getElementById('articleInputMethod').value = 'Manual';
+                    // Refresh to show new article
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
                 } else {
-                    alert('Failed to add article');
+                    const errorData = await res.json();
+                    alert(`Failed to add article: ${errorData.message || 'Unknown error'}`);
                 }
             } catch (error) {
-                alert('Failed to add article');
+                alert(`Failed to add article: ${error.message}`);
             }
         });
 
