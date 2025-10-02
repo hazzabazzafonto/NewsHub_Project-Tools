@@ -32,9 +32,9 @@ export interface EventRegistryRequest {
     $query: {
       $and: any[];
     };
-  };
-  $filter?: {
-    dataType?: string[];
+    $filter?: {
+      dataType?: string[];
+    };
   };
   resultType: string;
   articlesSortBy?: string;
@@ -131,6 +131,9 @@ export class EventRegistryAPI {
     const query: EventRegistryRequest['query'] = {
       $query: {
         $and: []
+      },
+      $filter: {
+        dataType: ["news", "blog"]
       }
     };
 
@@ -175,15 +178,17 @@ export class EventRegistryAPI {
       dateEnd: endDate
     });
 
-    return {
+    const request = {
       query,
-      $filter: {
-        dataType: ["news", "blog"]
-      },
       resultType: "articles",
       articlesSortBy: "date",
       apiKey: process.env.EVENT_REGISTRY_API_KEY || ''
     };
+
+    // Log the request for debugging
+    console.log('Event Registry Request:', JSON.stringify(request, null, 2));
+
+    return request;
   }
 
   /**
@@ -221,44 +226,15 @@ export class EventRegistryAPI {
 
   /**
    * Parse boolean query string into Event Registry format
+   * Supports complex queries with nested AND/OR operations and parentheses
    */
   private parseBooleanQuery(queryString: string): any {
     try {
-      // Simple boolean query parser
-      // This is a basic implementation - in production you'd want a more robust parser
-      
       // Remove quotes and clean up the query
       const cleanQuery = queryString.replace(/"/g, '').trim();
       
-      // For now, we'll use a simple approach:
-      // Split by AND/OR and create appropriate conditions
-      if (cleanQuery.includes(' AND ')) {
-        const andTerms = cleanQuery.split(' AND ').map(term => term.trim());
-        if (andTerms.length > 1) {
-          return {
-            $and: andTerms.map(term => ({
-              keyword: term,
-              keywordLoc: "body"
-            }))
-          };
-        }
-      } else if (cleanQuery.includes(' OR ')) {
-        const orTerms = cleanQuery.split(' OR ').map(term => term.trim());
-        if (orTerms.length > 1) {
-          return {
-            $or: orTerms.map(term => ({
-              keyword: term,
-              keywordLoc: "body"
-            }))
-          };
-        }
-      }
-      
-      // If no operators found, treat as single term
-      return {
-        keyword: cleanQuery,
-        keywordLoc: "body"
-      };
+      // Parse the query recursively to handle nested operations
+      return this.parseQueryExpression(cleanQuery);
     } catch (error) {
       console.error('Error parsing boolean query:', error);
       // Fallback to simple keyword search
@@ -267,6 +243,82 @@ export class EventRegistryAPI {
         keywordLoc: "body"
       };
     }
+  }
+
+  /**
+   * Recursively parse query expressions with proper operator precedence
+   */
+  private parseQueryExpression(expression: string): any {
+    // Remove outer parentheses if they wrap the entire expression
+    expression = expression.trim();
+    if (expression.startsWith('(') && expression.endsWith(')')) {
+      const inner = expression.slice(1, -1);
+      if (this.isBalanced(inner)) {
+        expression = inner;
+      }
+    }
+
+    // Handle OR operations (lower precedence)
+    const orIndex = this.findOperatorIndex(expression, ' OR ');
+    if (orIndex !== -1) {
+      const left = expression.substring(0, orIndex).trim();
+      const right = expression.substring(orIndex + 4).trim();
+      
+      return {
+        $or: [
+          this.parseQueryExpression(left),
+          this.parseQueryExpression(right)
+        ]
+      };
+    }
+
+    // Handle AND operations (higher precedence)
+    const andIndex = this.findOperatorIndex(expression, ' AND ');
+    if (andIndex !== -1) {
+      const left = expression.substring(0, andIndex).trim();
+      const right = expression.substring(andIndex + 5).trim();
+      
+      return {
+        $and: [
+          this.parseQueryExpression(left),
+          this.parseQueryExpression(right)
+        ]
+      };
+    }
+
+    // Base case: single term
+    return {
+      keyword: expression,
+      keywordLoc: "body"
+    };
+  }
+
+  /**
+   * Find the index of an operator, respecting parentheses
+   */
+  private findOperatorIndex(expression: string, operator: string): number {
+    let depth = 0;
+    for (let i = 0; i < expression.length - operator.length + 1; i++) {
+      if (expression[i] === '(') depth++;
+      else if (expression[i] === ')') depth--;
+      else if (depth === 0 && expression.substring(i, i + operator.length) === operator) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  /**
+   * Check if parentheses are balanced
+   */
+  private isBalanced(expression: string): boolean {
+    let count = 0;
+    for (const char of expression) {
+      if (char === '(') count++;
+      else if (char === ')') count--;
+      if (count < 0) return false;
+    }
+    return count === 0;
   }
 
   /**
