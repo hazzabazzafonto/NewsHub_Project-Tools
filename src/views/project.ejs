@@ -2414,6 +2414,33 @@
             return true;
         }
 
+        // Clean Factiva text by removing page separators and copyright notices
+        function cleanFactivaText(text) {
+            if (!text) return '';
+            
+            console.log('Cleaning Factiva text, original length:', text.length);
+            
+            // Remove page separators like "--- Page 17 ---"
+            text = text.replace(/--- Page \d+ ---/g, '');
+            
+            // Remove Factiva copyright notices
+            text = text.replace(/Page \d+ of \d+ © \d{4} Factiva, Inc\. All rights reserved\./g, '');
+            
+            // Remove any remaining page number references
+            text = text.replace(/Page \d+ of \d+/g, '');
+            
+            // Clean up multiple newlines and spaces
+            text = text.replace(/\n\s*\n\s*\n/g, '\n\n'); // Replace 3+ newlines with 2
+            text = text.replace(/[ \t]+/g, ' '); // Replace multiple spaces/tabs with single space
+            text = text.replace(/\n /g, '\n'); // Remove spaces at start of lines
+            text = text.replace(/ \n/g, '\n'); // Remove spaces at end of lines
+            
+            const cleanedText = text.trim();
+            console.log('Cleaned Factiva text, new length:', cleanedText.length);
+            
+            return cleanedText;
+        }
+
         // Extract text content for a specific article
         function extractFactivaArticleText(article, pages, allArticles, currentIndex) {
             const startPage = article.pageNumber;
@@ -2440,7 +2467,7 @@
                 }
             }
             
-            return articleText.trim();
+            return cleanFactivaText(articleText);
         }
 
         // Extract article metadata
