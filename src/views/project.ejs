@@ -958,11 +958,16 @@
     <!-- PDF.js Library for Factiva PDF Processing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
-        // Set up PDF.js worker
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
         // Main DOMContentLoaded event listener - consolidates all initialization
         document.addEventListener('DOMContentLoaded', function() {
+            // Set up PDF.js worker after DOM is loaded
+            if (typeof pdfjsLib !== 'undefined') {
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                console.log('PDF.js worker configured');
+            } else {
+                console.error('PDF.js library not loaded!');
+            }
+
             // Input Method Toggle Functionality
             const methodTabs = document.querySelectorAll('.method-tab');
             const inputPanels = document.querySelectorAll('.input-panel');
@@ -2153,12 +2158,21 @@
 
             try {
                 console.log('Starting PDF processing...');
+                
+                // Check if PDF.js is available
+                if (typeof pdfjsLib === 'undefined') {
+                    throw new Error('PDF.js library not loaded. Please refresh the page.');
+                }
+                
                 showFactivaLoading();
                 hideFactivaError();
                 hideFactivaStats();
 
                 const arrayBuffer = await readFileAsArrayBuffer(factivaSelectedFile);
+                console.log('File read as ArrayBuffer, size:', arrayBuffer.byteLength);
+                
                 const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                console.log('PDF document loaded, pages:', pdf.numPages);
                 
                 const result = {
                     metadata: {
@@ -2244,6 +2258,11 @@
 
             } catch (err) {
                 console.error('Error processing PDF:', err);
+                console.error('Error details:', {
+                    name: err.name,
+                    message: err.message,
+                    stack: err.stack
+                });
                 showFactivaError('Error processing PDF: ' + err.message);
                 hideFactivaLoading();
                 hideFactivaProgress();
