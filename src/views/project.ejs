@@ -564,8 +564,8 @@
                             <th></th>
                             <th>Title</th>
                             <th>Source</th>
-                            <th>Retrieved</th>
-                            <th>Analysis</th>
+                            <th>Date</th>
+                            <th>Method</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -574,12 +574,20 @@
                                 <td>
                                     <input type="checkbox" class="article-checkbox" data-id="<%= article.id %>">
                                 </td>
-                                <td><%= article.title %></td>
-                                <td><%= article.source || 'Manual' %></td>
-                                <td><%= article.retrievedAt ? new Date(article.retrievedAt).toLocaleString() : '' %></td>
                                 <td>
-                                    <span class="status-badge <%= article.analysisStatus === 'complete' ? 'status-complete' : 'status-pending' %>">
-                                        <%= article.analysisStatus || 'pending' %>
+                                    <% if (article.url) { %>
+                                        <a href="<%= article.url %>" target="_blank" rel="noopener noreferrer" style="color: #0070f3; text-decoration: none;">
+                                            <%= article.title %>
+                                        </a>
+                                    <% } else { %>
+                                        <%= article.title %>
+                                    <% } %>
+                                </td>
+                                <td><%= article.source || 'Unknown Source' %></td>
+                                <td><%= article.date ? new Date(article.date).toLocaleDateString() : 'Unknown' %></td>
+                                <td>
+                                    <span class="status-badge status-pending">
+                                        <%= article.inputMethod || 'Unknown' %>
                                     </span>
                                 </td>
                             </tr>
@@ -612,8 +620,8 @@
                     <button type="submit" class="btn btn-primary">Add Article</button>
                 </form>
             </div>
+            </div>
         </div>
-    </div>
 
     <script>
         // Event Registry functionality
@@ -646,7 +654,7 @@
                     <span class="item-type">TERM</span>
                     <div class="operator-toggle">
                         <button type="button" class="operator-btn active-and" data-operator="AND" onclick="toggleOperator('${termId}')">AND</button>
-                    </div>
+                </div>
                     <input type="text" class="term-input" placeholder="Enter search term" onchange="updateQueryVisualization()" onkeyup="updateQueryVisualization()">
                     <button type="button" class="remove-btn" onclick="removeQueryItem('${termId}')">Remove</button>
                 </div>
@@ -665,18 +673,18 @@
                     <span class="item-type">GROUP</span>
                     <div class="operator-toggle">
                         <button type="button" class="operator-btn active-and" data-operator="AND" onclick="toggleOperator('${groupId}')">AND</button>
-                    </div>
+                </div>
                     <button type="button" class="remove-btn" onclick="removeQueryItem('${groupId}')">Remove</button>
                     
                     <div class="group-content">
                         <div class="group-controls">
                             <button type="button" onclick="addBooleanTermToGroup('${groupId}')">+ Add Term</button>
                             <button type="button" onclick="addBooleanGroupToGroup('${groupId}')">+ Add Group</button>
-                        </div>
+                    </div>
                         <div class="group-items" id="group_${groupId}_items">
                             <!-- Group items will be added here -->
-                        </div>
                     </div>
+                </div>
                 </div>
             `;
             
@@ -693,10 +701,10 @@
                     <span class="item-type">TERM</span>
                     <div class="operator-toggle">
                         <button type="button" class="operator-btn active-and" data-operator="AND" onclick="toggleOperator('${termId}')">AND</button>
-                    </div>
+                        </div>
                     <input type="text" class="term-input" placeholder="Enter search term" onchange="updateQueryVisualization()" onkeyup="updateQueryVisualization()">
                     <button type="button" class="remove-btn" onclick="removeQueryItem('${termId}')">Remove</button>
-                </div>
+                    </div>
             `;
             
             groupItems.insertAdjacentHTML('beforeend', termHtml);
@@ -712,7 +720,7 @@
                     <span class="item-type">GROUP</span>
                     <div class="operator-toggle">
                         <button type="button" class="operator-btn active-and" data-operator="AND" onclick="toggleOperator('${groupId}')">AND</button>
-                    </div>
+                        </div>
                     <button type="button" class="remove-btn" onclick="removeQueryItem('${groupId}')">Remove</button>
                     
                     <div class="group-content">
@@ -960,9 +968,9 @@
                                 ${source.region ? `<span class="source-region">${source.region}</span>` : ''}
                                 ${source.country ? `<span class="source-country">${source.country}</span>` : ''}
                                 ${source.language ? `<span class="source-language">${source.language}</span>` : ''}
-                            </div>
-                        </label>
                     </div>
+                        </label>
+                </div>
                 `;
             });
 
@@ -1149,10 +1157,10 @@
                     results.innerHTML = `
                         <div class="success">
                             <strong>Success!</strong> Found ${data.count} articles
-                        </div>
+            </div>
                         <div class="info">
                             Articles fetched successfully. Click "Write to Sheet" to save them to your project sheet.
-                        </div>
+        </div>
                     `;
                     writeToSheetBtn.disabled = false;
                 } else {

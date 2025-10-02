@@ -117,3 +117,46 @@ export async function writeAnalysisToSheet(spreadsheetId: string, rows: string[]
 
   console.log(`Successfully wrote ${rows.length} rows to ${tabName} tab`);
 }
+
+/**
+ * Read articles from a project's Google Sheet
+ */
+export async function readArticlesFromSheet(spreadsheetId: string, tabName = 'Articles'): Promise<any[]> {
+  const authClient = await getAuthClient();
+  const sheets = google.sheets({ version: 'v4', auth: authClient });
+
+  try {
+    console.log(`Reading articles from sheet ${spreadsheetId}, tab: ${tabName}`);
+    
+    // Read all data from the Articles tab
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `${tabName}!A:H`, // Assuming articles have 8 columns
+    });
+
+    const rows = response.data.values || [];
+    
+    if (rows.length <= 1) {
+      // Only headers or no data
+      return [];
+    }
+
+    // Skip the header row and convert to article objects
+    const articles = rows.slice(1).map((row, index) => ({
+      id: row[0] || (index + 1).toString(),
+      source: row[1] || 'Unknown Source',
+      title: row[2] || 'No Title',
+      authors: row[3] || 'No Author',
+      url: row[4] || '',
+      content: row[5] || 'No Content',
+      date: row[6] || new Date().toISOString().split('T')[0],
+      inputMethod: row[7] || 'Unknown'
+    }));
+
+    console.log(`Successfully read ${articles.length} articles from ${tabName} tab`);
+    return articles;
+  } catch (error) {
+    console.error(`Error reading articles from sheet ${spreadsheetId}:`, error);
+    return [];
+  }
+}
