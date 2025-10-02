@@ -495,6 +495,29 @@
             display: none;
         }
 
+        .file-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        .file-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .file-size {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
         .progress-bar {
             width: 100%;
             height: 8px;
@@ -2010,8 +2033,20 @@
             uploadArea.addEventListener('drop', handleFactivaDrop);
             fileInput.addEventListener('change', handleFactivaFileSelect);
             
-            if (processBtn) processBtn.addEventListener('click', processFactivaPDF);
-            if (clearBtn) clearBtn.addEventListener('click', clearFactivaData);
+            if (processBtn) {
+                processBtn.addEventListener('click', () => {
+                    console.log('Process button clicked via event listener');
+                    processFactivaPDF();
+                });
+            } else {
+                console.error('Process button not found!');
+            }
+            
+            if (clearBtn) {
+                clearBtn.addEventListener('click', clearFactivaData);
+            } else {
+                console.error('Clear button not found!');
+            }
             
             console.log('Factiva PDF event listeners attached successfully');
         }
@@ -2056,18 +2091,44 @@
 
         // Handle selected file
         function handleFactivaFile(file) {
+            console.log('Handling selected file:', file);
             factivaSelectedFile = file;
+            console.log('File stored in factivaSelectedFile:', factivaSelectedFile);
+            
             showFactivaFileInfo(file);
-            document.getElementById('factivaProcessBtn').disabled = false;
+            
+            const processBtn = document.getElementById('factivaProcessBtn');
+            if (processBtn) {
+                processBtn.disabled = false;
+                console.log('Process button enabled');
+            } else {
+                console.error('Process button not found when trying to enable it!');
+            }
+            
             hideFactivaError();
             hideFactivaStats();
         }
 
         // Show file information
         function showFactivaFileInfo(file) {
-            document.getElementById('factivaFileName').textContent = file.name;
-            document.getElementById('factivaFileSize').textContent = formatFileSize(file.size);
-            document.getElementById('factivaFileInfo').classList.add('show');
+            console.log('Showing file info for:', file.name);
+            
+            const fileNameEl = document.getElementById('factivaFileName');
+            const fileSizeEl = document.getElementById('factivaFileSize');
+            const fileInfoEl = document.getElementById('factivaFileInfo');
+            
+            console.log('File info elements found:', {
+                fileName: !!fileNameEl,
+                fileSize: !!fileSizeEl,
+                fileInfo: !!fileInfoEl
+            });
+            
+            if (fileNameEl) fileNameEl.textContent = file.name;
+            if (fileSizeEl) fileSizeEl.textContent = formatFileSize(file.size);
+            if (fileInfoEl) {
+                fileInfoEl.classList.add('show');
+                console.log('File info panel shown');
+            }
         }
 
         // Format file size
@@ -2081,9 +2142,17 @@
 
         // Process Factiva PDF
         async function processFactivaPDF() {
-            if (!factivaSelectedFile) return;
+            console.log('Process PDF button clicked');
+            console.log('Selected file:', factivaSelectedFile);
+            
+            if (!factivaSelectedFile) {
+                console.log('No file selected, returning');
+                showFactivaError('Please select a PDF file first.');
+                return;
+            }
 
             try {
+                console.log('Starting PDF processing...');
                 showFactivaLoading();
                 hideFactivaError();
                 hideFactivaStats();
