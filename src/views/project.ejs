@@ -2470,6 +2470,93 @@
             return cleanFactivaText(articleText);
         }
 
+        // Enhanced author detection helper functions from reference
+        function processAuthorText(text) {
+            if (!text || text.trim().length === 0) return null;
+            
+            // If it's a single word, ignore it
+            const words = text.trim().split(/\s+/);
+            if (words.length === 1) {
+                return null;
+            }
+            
+            // If it contains "|", only return the part before the pipe symbol
+            if (text.includes('|')) {
+                const beforePipe = text.split('|')[0].trim();
+                // Check if the part before pipe is still valid (not single word)
+                const beforePipeWords = beforePipe.split(/\s+/);
+                if (beforePipeWords.length === 1) {
+                    return null;
+                }
+                return beforePipe;
+            }
+            
+            // Return the original text if it passes the single word check
+            return text;
+        }
+
+        // Check if text looks like a source name rather than an author
+        function isSourceLikeText(text) {
+            if (!text || text.length < 3) return false;
+            
+            // Check if it contains "Press" as a standalone word and is more than 2 words
+            const pressPattern = /\bPress\b/i;
+            const wordCount = text.trim().split(/\s+/).length;
+            
+            if (pressPattern.test(text) && wordCount > 2) {
+                return true;
+            }
+            
+            // Check for other common source patterns
+            const sourcePatterns = [
+                /\b(News|Times|Post|Journal|Herald|Tribune|Gazette|Chronicle|Observer|Guardian|Telegraph|Sun|Mirror|Express|Mail|Standard|Independent|Financial|Business|Wall Street|Associated|Reuters|Bloomberg|CNN|BBC|NBC|CBS|ABC|Fox|NPR|AP|AFP|UPI|Xinhua|Kyodo|DPA|ANSA|EFE|RIA|TASS|Interfax|Sputnik|RT|Al Jazeera|DW|France 24|Euronews|Deutsche Welle|Voice of America|Radio Free Europe|Radio Liberty|Moscow Times|Times of India|Hindustan Times|The Hindu|Dawn|Gulf News|Khaleej Times|Arab News|Asharq Al-Awsat|Al-Ahram|Al-Monitor|Middle East Eye|Haaretz|Jerusalem Post|Times of Israel|Yedioth Ahronoth|Maariv|Israel Hayom|Globes|Calcalist|TheMarker|Walla|N12|Channel 2|Channel 10|Kan|Reshet|Keshet|Hot|Yes|Cellcom|Pelephone|Partner|Golan Telecom|Rami Levy|Super-Pharm|Mega|Shufersal|Victory|Coop|Osher Ad)\b/i
+            ];
+            
+            return sourcePatterns.some(pattern => pattern.test(text));
+        }
+
+        // Check if text is common non-author text
+        function isCommonNonAuthorText(text) {
+            const nonAuthorPatterns = [
+                /^page\s+\d+/i,           // "Page X"
+                /^©\s*\d{4}/i,           // Copyright notices
+                /^factiva/i,              // Factiva references
+                /^all\s+rights\s+reserved/i, // Rights text
+                /^\d+$/,                  // Just numbers
+                /^\s*$/,                 // Empty or whitespace only
+                /^volume\s+\d+/i,        // Volume references
+                /^issue\s+\d+/i,         // Issue references
+                /^document\s+\d+/i       // Document references
+            ];
+            
+            return nonAuthorPatterns.some(pattern => pattern.test(text));
+        }
+
+        // Check if text is likely not a source name
+        function isCommonNonSourceText(text) {
+            const nonSourcePatterns = [
+                /^page\s+\d+/i,           // "Page X"
+                /^©\s*\d{4}/i,           // Copyright notices
+                /^factiva/i,              // Factiva references
+                /^all\s+rights\s+reserved/i, // Rights text
+                /^\d+$/,                  // Just numbers
+                /^\s*$/,                 // Empty or whitespace only
+                /^volume\s+\d+/i,        // Volume references
+                /^issue\s+\d+/i,         // Issue references
+                /^document\s+\d+/i,      // Document references
+                /^issn:/i,               // ISSN references
+                /^english/i,              // Language indicators
+                /^gaan/i,                // Common non-source text
+                /^640-644/i,             // Page ranges
+                /^volume\s+\d+;\s*issue\s+\d+/i, // Volume/Issue format
+                /^©\s*\d{4}\s+[^.]+\s*provided\s+by/i, // Copyright provider text
+                /^\d{1,2}:\d{2}\s*(AM|PM|am|pm)?$/i, // Time patterns like "04:37", "11:03 AM"
+                /^\d{1,2}:\d{2}$/i       // Time patterns without AM/PM like "04:37"
+            ];
+            
+            return nonSourcePatterns.some(pattern => pattern.test(text));
+        }
+
         // Extract article metadata
         function extractFactivaArticleMetadata(articleText, articleTitle) {
             const metadata = {
@@ -2509,23 +2596,85 @@
                             if (isTimeLine) {
                                 if (i + 3 < lines.length) {
                                     const sourceLine = lines[i + 3].trim();
-                                    if (sourceLine.length > 0 && isValidFactivaSourceName(sourceLine)) {
+                                    if (sourceLine.length > 0 && !isCommonNonSourceText(sourceLine)) {
                                         metadata.source = sourceLine;
                                     }
                                 }
                             } else {
-                                if (lineAfterDate.length > 0 && isValidFactivaSourceName(lineAfterDate)) {
+                                if (lineAfterDate.length > 0 && !isCommonNonSourceText(lineAfterDate)) {
                                     metadata.source = lineAfterDate;
                                 }
                             }
                         }
                     }
                     
-                    // Look for author above word count line
+                    // Enhanced author detection logic
                     if (i > 0) {
                         const lineAboveWordCount = lines[i - 1].trim();
-                        if (lineAboveWordCount.length > 0 && !isCommonFactivaNonAuthorText(lineAboveWordCount)) {
-                            metadata.author = lineAboveWordCount;
+                        console.log('Author detection - line above word count:', lineAboveWordCount);
+                        console.log('Author detection - metadata.source:', metadata.source);
+                        
+                        // Check if the line above word count is the same as the source
+                        if (metadata.source && lineAboveWordCount === metadata.source) {
+                            // If they match, look above that for the actual author
+                            console.log('Source matches line above, looking for author above that');
+                            if (i > 1) {
+                                const potentialAuthor = lines[i - 2].trim();
+                                console.log('Potential author (2 lines above):', potentialAuthor);
+                                
+                                // Process the potential author text according to filtering rules
+                                const processedAuthor = processAuthorText(potentialAuthor);
+                                console.log('Processed author:', processedAuthor);
+                                
+                                // Only consider as author if it's different from the article title
+                                // and doesn't contain common non-author patterns
+                                // and is not source-like text
+                                if (processedAuthor && 
+                                    processedAuthor !== articleTitle && 
+                                    !isCommonNonAuthorText(processedAuthor) &&
+                                    !isSourceLikeText(processedAuthor)) {
+                                    metadata.author = processedAuthor;
+                                    console.log('Author found (2 lines above):', processedAuthor);
+                                } else {
+                                    console.log('Author rejected - processedAuthor:', processedAuthor, 'articleTitle:', articleTitle, 'isCommonNonAuthor:', isCommonNonAuthorText(processedAuthor), 'isSourceLike:', isSourceLikeText(processedAuthor));
+                                }
+                            }
+                        } else {
+                            // If they don't match, check if the line above word count could be the author
+                            // But first check if it looks like a source name
+                            console.log('Source does not match line above, checking if line above is source-like');
+                            if (isSourceLikeText(lineAboveWordCount)) {
+                                console.log('Line above looks like source, looking for author above that');
+                                // If it looks like a source, look above for the actual author
+                                if (i > 1) {
+                                    const potentialAuthor = lines[i - 2].trim();
+                                    console.log('Potential author (2 lines above):', potentialAuthor);
+                                    const processedAuthor = processAuthorText(potentialAuthor);
+                                    console.log('Processed author:', processedAuthor);
+                                    if (processedAuthor && 
+                                        processedAuthor !== articleTitle && 
+                                        !isCommonNonAuthorText(processedAuthor) &&
+                                        !isSourceLikeText(processedAuthor)) {
+                                        metadata.author = processedAuthor;
+                                        console.log('Author found (2 lines above):', processedAuthor);
+                                    } else {
+                                        console.log('Author rejected (2 lines above)');
+                                    }
+                                }
+                            } else {
+                                console.log('Line above does not look like source, checking as potential author');
+                                const processedAuthor = processAuthorText(lineAboveWordCount);
+                                console.log('Processed author:', processedAuthor);
+                                if (processedAuthor && 
+                                    processedAuthor !== articleTitle && 
+                                    !isCommonNonAuthorText(processedAuthor) &&
+                                    !isSourceLikeText(processedAuthor)) {
+                                    metadata.author = processedAuthor;
+                                    console.log('Author found (1 line above):', processedAuthor);
+                                } else {
+                                    console.log('Author rejected (1 line above)');
+                                }
+                            }
                         }
                     }
                     
