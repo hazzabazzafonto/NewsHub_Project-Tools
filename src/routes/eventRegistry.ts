@@ -171,46 +171,93 @@ router.post('/write-to-sheet', async (req: express.Request, res: express.Respons
       return res.status(404).json({ message: 'Project not found' });
     }
 
+    // Get fresh auth client to avoid token expiration issues
     const authClient = await getAuthClient();
-    const sheets = google.sheets({ version: 'v4', auth: authClient });
+    
+    // Refresh token if needed
+    try {
+      await authClient.getAccessToken();
+    } catch (error) {
+      console.log('Refreshing authentication token...');
+      await authClient.refreshAccessToken();
+    }
+    
+    const sheets = google.sheets({ 
+      version: 'v4', 
+      auth: authClient,
+      timeout: 60000 // 60 second timeout for the entire client
+    });
 
     // Format articles for sheets (no headers needed - they're already in the sheet)
     const formattedArticles = eventRegistryAPI.formatArticlesForSheets(articles);
 
     const sheetData = formattedArticles;
 
-    // Write to the project's sheet in batches to handle large datasets
-    const batchSize = 1000; // Process 1000 articles at a time
+    // Write to the project's sheet in smaller batches with retry logic
+    const batchSize = 100; // Reduced batch size to avoid timeouts
     const totalBatches = Math.ceil(sheetData.length / batchSize);
+    const maxRetries = 3;
+    const retryDelay = 2000; // 2 seconds between retries
+    
+    console.log(`Writing ${sheetData.length} articles in ${totalBatches} batches of ${batchSize}`);
     
     for (let i = 0; i < totalBatches; i++) {
       const startIndex = i * batchSize;
       const endIndex = Math.min(startIndex + batchSize, sheetData.length);
       const batch = sheetData.slice(startIndex, endIndex);
       
-      // Append data rows to the existing sheet
-      const range = 'Articles!A:A';
+      console.log(`Processing batch ${i + 1}/${totalBatches} (${batch.length} articles)`);
       
-      await sheets.spreadsheets.values.append({
-        spreadsheetId: project.sheetId,
-        range,
-        valueInputOption: 'RAW',
-        requestBody: {
-          values: batch,
-        },
-      });
+      // Retry logic for each batch
+      let success = false;
+      let attempt = 0;
       
-      // Add a small delay between batches to avoid rate limiting
+      while (!success && attempt < maxRetries) {
+        try {
+          attempt++;
+          console.log(`Batch ${i + 1} attempt ${attempt}/${maxRetries}`);
+          
+          await sheets.spreadsheets.values.append({
+            spreadsheetId: project.sheetId,
+            range: 'Articles!A:A',
+            valueInputOption: 'RAW',
+            requestBody: {
+              values: batch,
+            },
+          }, {
+            timeout: 60000 // 60 second timeout
+          });
+          
+          success = true;
+          console.log(`Batch ${i + 1} completed successfully`);
+          
+        } catch (error: any) {
+          console.error(`Batch ${i + 1} attempt ${attempt} failed:`, error.message);
+          
+          if (attempt < maxRetries) {
+            console.log(`Retrying batch ${i + 1} in ${retryDelay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+          } else {
+            console.error(`Batch ${i + 1} failed after ${maxRetries} attempts`);
+            throw new Error(`Failed to write batch ${i + 1} after ${maxRetries} attempts: ${error.message}`);
+          }
+        }
+      }
+      
+      // Add delay between batches to avoid rate limiting
       if (i < totalBatches - 1) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Increased to 1 second
       }
     }
 
+    console.log(`Successfully wrote all ${articles.length} articles to project sheet`);
+    
     res.json({
       success: true,
       message: `Successfully wrote ${articles.length} articles to project sheet${totalBatches > 1 ? ` in ${totalBatches} batches` : ''}`,
       count: articles.length,
-      batches: totalBatches
+      batches: totalBatches,
+      batchSize: batchSize
     });
 
   } catch (error: any) {
