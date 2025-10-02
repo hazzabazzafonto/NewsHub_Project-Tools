@@ -330,4 +330,174 @@ function cleanSourceUrl(source: string): string {
     .trim();
 }
 
+// Check if output pages exist and create if needed
+router.post('/check-output-pages', async (req: express.Request, res: express.Response) => {
+  try {
+    const { projectId, spreadsheetId, categoriesPageName, quotesPageName } = req.body;
+    
+    if (!spreadsheetId || !categoriesPageName || !quotesPageName) {
+      return res.status(400).json({ error: 'Spreadsheet ID and both page names are required' });
+    }
+
+    console.log(`Checking if output pages "${categoriesPageName}" and "${quotesPageName}" exist in spreadsheet: ${spreadsheetId}`);
+    
+    const authClient = await getAuthClient();
+    const sheets = google.sheets({ version: 'v4', auth: authClient });
+    
+    // Get all sheets in the spreadsheet
+    const response = await sheets.spreadsheets.get({
+      spreadsheetId: spreadsheetId
+    });
+
+    const existingSheets = response.data.sheets?.map(sheet => sheet.properties?.title) || [];
+    const categoriesExists = existingSheets.includes(categoriesPageName);
+    const quotesExists = existingSheets.includes(quotesPageName);
+
+    const sheetsToCreate = [];
+    if (!categoriesExists) sheetsToCreate.push(categoriesPageName);
+    if (!quotesExists) sheetsToCreate.push(quotesPageName);
+
+    if (sheetsToCreate.length > 0) {
+      console.log(`Creating new output pages: ${sheetsToCreate.join(', ')}`);
+      
+      // Create the new sheets
+      const requests = sheetsToCreate.map(sheetName => ({
+        addSheet: {
+          properties: {
+            title: sheetName
+          }
+        }
+      }));
+
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: spreadsheetId,
+        requestBody: {
+          requests: requests
+        }
+      });
+      
+      res.json({ 
+        success: true, 
+        created: sheetsToCreate,
+        message: `Output pages created: ${sheetsToCreate.join(', ')}`
+      });
+    } else {
+      res.json({ 
+        success: true, 
+        created: [],
+        message: `Both output pages already exist`
+      });
+    }
+
+  } catch (error: any) {
+    console.error('Error checking/creating output pages:', error);
+    
+    if (error.code === 404) {
+      res.status(404).json({ error: 'Spreadsheet not found. Please check the Spreadsheet ID.' });
+    } else if (error.code === 403) {
+      res.status(403).json({ error: 'Access denied. Please ensure the service account has write access to the spreadsheet.' });
+    } else {
+      res.status(500).json({ error: `Failed to check/create output pages: ${error.message}` });
+    }
+  }
+});
+
+// Process articles in chunks and send to Runchat API with progress updates
+router.post('/process-articles', async (req: express.Request, res: express.Response) => {
+  try {
+    const { projectId, spreadsheetId, sourceSheetName, categoriesPageName, quotesPageName, selectedArticles, totalRows } = req.body;
+    
+    // TODO: Add Runchat configuration check
+    // if (!config.runchat.runchatId || !config.runchat.bearerToken) {
+    //   return res.status(400).json({ error: 'Runchat ID and Bearer Token must be configured' });
+    // }
+
+    if (!spreadsheetId || !sourceSheetName || !categoriesPageName || !quotesPageName || !totalRows) {
+      return res.status(400).json({ error: 'All required parameters are needed' });
+    }
+
+    console.log(`Processing articles from sheet: ${sourceSheetName} to categories page: ${categoriesPageName} and quotes page: ${quotesPageName}`);
+    console.log('Selected articles:', selectedArticles);
+    console.log('Total rows to process:', totalRows);
+    
+    const results = [];
+    let totalProcessed = 0;
+    let chunksProcessed = 0;
+    const chunkSize = 6; // Match reference implementation
+    const startRow = 2; // Start from row 2 (after header)
+    
+    // Calculate total chunks based on total rows
+    const totalChunks = Math.ceil(totalRows / chunkSize);
+    
+    console.log(`Processing ${totalRows} data rows in ${totalChunks} chunks of ${chunkSize} rows each`);
+    
+    // For now, simulate processing since we don't have Runchat integration yet
+    for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+      const startIndex = chunkIndex * chunkSize;
+      const endIndex = Math.min(startIndex + chunkSize, totalRows);
+      const chunkRowCount = endIndex - startIndex;
+      
+      // Calculate ranges for this chunk
+      const chunkStartRow = startRow + startIndex;
+      const chunkEndRow = startRow + endIndex - 1;
+      const sourceRange = `A${chunkStartRow}:E${chunkEndRow}`;
+      const outputStartRow = (chunkIndex * chunkSize) + 1;
+      const outputEndRow = outputStartRow + chunkRowCount - 1;
+      const outputRange = `${outputStartRow}:${outputEndRow}`;
+      
+      console.log(`Processing chunk ${chunkIndex + 1}/${totalChunks}: ${sourceRange} -> ${outputRange}`);
+      
+      try {
+        // TODO: Implement actual Runchat API call
+        // For now, simulate successful processing
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate processing time
+        
+        results.push({
+          chunk: chunkIndex + 1,
+          sourceRange: sourceRange,
+          outputRange: outputRange,
+          rowsProcessed: chunkRowCount,
+          status: 'success',
+          response: { message: 'Simulated processing successful' }
+        });
+        
+        totalProcessed += chunkRowCount;
+        chunksProcessed++;
+        
+        console.log(`Chunk ${chunkIndex + 1} completed successfully. Processed ${chunkRowCount} rows.`);
+        
+        // Wait between chunks
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+      } catch (error: any) {
+        console.error(`Error processing chunk ${chunkIndex + 1}:`, error);
+        
+        results.push({
+          chunk: chunkIndex + 1,
+          sourceRange: sourceRange,
+          outputRange: outputRange,
+          rowsProcessed: chunkRowCount,
+          status: 'error',
+          error: error.message
+        });
+      }
+    }
+
+    res.json({ 
+      success: true, 
+      totalProcessed: totalProcessed,
+      chunksProcessed: chunksProcessed,
+      totalChunks: totalChunks,
+      results: results
+    });
+
+  } catch (error: any) {
+    console.error('Error processing articles:', error);
+    res.status(500).json({ 
+      error: `Failed to process articles: ${error.message}`,
+      details: error.stack
+    });
+  }
+});
+
 export default router;
