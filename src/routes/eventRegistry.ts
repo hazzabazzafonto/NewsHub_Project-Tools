@@ -3,6 +3,39 @@ import { EventRegistryAPI } from '../lib/eventRegistry';
 import { getAuthClient } from '../lib/googleSheets';
 import { google } from 'googleapis';
 
+/**
+ * Get the next sequential article ID from the sheet
+ */
+async function getNextArticleId(sheetId: string): Promise<number> {
+  try {
+    const authClient = await getAuthClient();
+    const sheets = google.sheets({ version: 'v4', auth: authClient });
+    
+    // Read the first column to get existing IDs
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId,
+      range: 'Articles!A:A',
+    });
+    
+    const rows = response.data.values || [];
+    
+    if (rows.length <= 1) {
+      // Only headers or no data, start from 1
+      return 1;
+    }
+    
+    // Skip header row and find the highest ID
+    const ids = rows.slice(1)
+      .map(row => parseInt(row[0]) || 0)
+      .filter(id => !isNaN(id));
+    
+    return ids.length > 0 ? Math.max(...ids) + 1 : 1;
+  } catch (error) {
+    console.error('Error getting next article ID:', error);
+    return 1; // Fallback to 1
+  }
+}
+
 const router = express.Router();
 
 // Initialize Event Registry API
@@ -188,8 +221,21 @@ router.post('/write-to-sheet', async (req: express.Request, res: express.Respons
       timeout: 60000 // 60 second timeout for the entire client
     });
 
-    // Format articles for sheets (no headers needed - they're already in the sheet)
-    const formattedArticles = eventRegistryAPI.formatArticlesForSheets(articles);
+    // Determine if these are Event Registry articles or manual entries
+    const isEventRegistryArticles = articles.length > 0 && articles[0].source?.title !== undefined;
+    
+    let formattedArticles: string[][];
+    
+    // Get next sequential ID for all articles
+    const nextId = await getNextArticleId(project.sheetId);
+    
+    if (isEventRegistryArticles) {
+      // Event Registry articles
+      formattedArticles = eventRegistryAPI.formatArticlesForSheets(articles, nextId);
+    } else {
+      // Manual entry articles
+      formattedArticles = eventRegistryAPI.formatManualArticlesForSheets(articles, nextId);
+    }
 
     const sheetData = formattedArticles;
 

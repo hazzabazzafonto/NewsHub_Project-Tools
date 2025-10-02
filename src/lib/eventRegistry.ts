@@ -194,7 +194,7 @@ export class EventRegistryAPI {
   /**
    * Format articles for Google Sheets
    */
-  formatArticlesForSheets(articles: EventRegistryArticle[]): string[][] {
+  formatArticlesForSheets(articles: EventRegistryArticle[], startId: number = 1): string[][] {
     return articles.map((article, index) => {
       // Extract source name
       const sourceName = article.source?.title || 'Unknown Source';
@@ -214,13 +214,31 @@ export class EventRegistryAPI {
       // Extract date
       const date = article.dateTime || article.date || new Date().toISOString().split('T')[0];
       
-      // Article ID (simple row number)
-      const articleId = (index + 1).toString();
+      // Article ID (sequential)
+      const articleId = (startId + index).toString();
       
       // Input method
       const inputMethod = 'Event Registry';
 
       return [articleId, sourceName, title, authors, url, content, date, inputMethod];
+    });
+  }
+
+  /**
+   * Format manual entry articles for Google Sheets
+   */
+  formatManualArticlesForSheets(articles: any[], startId: number = 1): string[][] {
+    return articles.map((article, index) => {
+      return [
+        (startId + index).toString(), // Sequential ID
+        article.source || 'Unknown Source',
+        article.title || 'No Title',
+        article.authors || 'No Author Available',
+        article.url || '',
+        article.content || 'No Content Available',
+        article.date || new Date().toISOString().split('T')[0],
+        article.inputMethod || 'Manual'
+      ];
     });
   }
 
